@@ -1,0 +1,45 @@
+{{ define "index" -}}
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>SSH As Authentication For Web Applications</title>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    </head>
+    <body>
+        <p>Please enter your public key below and hit submit:</p>
+        <textarea id="key" maxlength="1000"></textarea>
+        <input type="submit" onclick="submit();" value="Save Public Key">
+        <p>And then enter this in your terminal:</p>
+        <code>ssh <span id="ssh-host"></span> -p 5000 -l <span id="ssh-id">{{ .Id }}</span></code>
+
+        <script>
+            // Set hostname
+            document.getElementById('ssh-host').innerText = window.location.hostname
+
+            // Setup Websockets
+            var ws = new WebSocket('ws://' + window.location.hostname + ':5001/ws');
+            ws.onmessage = function(data) {
+                data = JSON.parse(data.data);
+                if (data.type === 'ALERT') {
+                    alert(data.message);
+                }
+            }
+
+            // Submit
+            function submit() {
+                var msg = document.getElementById('key').value;
+                if (msg.length > 0) {
+                    ws.send(JSON.stringify({
+                        type: 'SAVE-KEY',
+                        id: document.getElementById('ssh-id').innerText,
+                        message: msg,
+                    }));
+                } else {
+                    alert('Please enter a key first.');
+                }
+            }
+        </script>
+    </body>
+</html>
+{{- end }}
